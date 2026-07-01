@@ -51,10 +51,7 @@ fn wallet_client(name: &str) -> bitcoincore_rpc::Result<Client> {
 /// node: creation is attempted first, and if the wallet already exists on disk
 /// the call falls back to loading it, treating an "already loaded" error as fine.
 fn ensure_wallet(rpc: &Client, name: &str) {
-    if rpc
-        .create_wallet(name, None, None, None, None)
-        .is_ok()
-    {
+    if rpc.create_wallet(name, None, None, None, None).is_ok() {
         return;
     }
     // Already exists on disk (or already loaded) — try to load, ignore if loaded.
