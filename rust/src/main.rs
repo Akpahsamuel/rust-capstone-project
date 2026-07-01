@@ -73,8 +73,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let blockchain_info = rpc.get_blockchain_info()?;
     println!("Blockchain Info: {:?}", blockchain_info);
 
-    // ---- Phase 2: Create/Load the 'Miner' and 'Trader' wallets ----
-    // Names are case-sensitive and must match exactly.
+    // Create/Load the 'Miner' and 'Trader' wallets (names are case-sensitive).
     ensure_wallet(&rpc, "Miner");
     ensure_wallet(&rpc, "Trader");
 
@@ -83,7 +82,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let trader = wallet_client("Trader")?;
     println!("Wallets ready: Miner and Trader loaded.");
 
-    // ---- Phase 3: Fund the Miner wallet by mining ----
+    // Fund the Miner wallet by mining to a "Mining Reward" address.
     let mining_address = miner
         .get_new_address(Some("Mining Reward"), None)?
         .assume_checked();
@@ -104,7 +103,7 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let miner_balance = miner.get_balance(None, None)?;
     println!("Miner wallet balance: {} BTC", miner_balance.to_btc());
 
-    // ---- Phase 4: Trader receiving address + send 20 BTC ----
+    // Create a "Received" address in the Trader wallet and send 20 BTC to it.
     let trader_address = trader
         .get_new_address(Some("Received"), None)?
         .assume_checked();
