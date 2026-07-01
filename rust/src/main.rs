@@ -120,9 +120,13 @@ fn main() -> bitcoincore_rpc::Result<()> {
     )?;
     println!("Sent 20 BTC from Miner to Trader, txid: {txid}");
 
-    // Check transaction in mempool
+    // Fetch the still-unconfirmed transaction from the mempool and print it.
+    let mempool_entry = rpc.get_mempool_entry(&txid)?;
+    println!("Mempool entry for {txid}: {mempool_entry:#?}");
 
-    // Mine 1 block to confirm the transaction
+    // Mine 1 block to confirm the transaction; keep its block hash.
+    let block_hash = rpc.generate_to_address(1, &mining_address)?[0];
+    println!("Confirmed in block {block_hash}");
 
     // Extract all required transaction details
 
