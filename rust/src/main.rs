@@ -34,8 +34,36 @@ fn send(rpc: &Client, addr: &str) -> bitcoincore_rpc::Result<String> {
     Ok(send_result.txid)
 }
 
+/// Build an RPC client scoped to a specific wallet.
+///
+/// Bitcoin Core exposes per-wallet RPCs (getbalance, sendtoaddress, ...) under
+/// the `/wallet/<name>` URL path, so each wallet needs its own client.
+fn wallet_client(name: &str) -> bitcoincore_rpc::Result<Client> {
+    Client::new(
+        &format!("{RPC_URL}/wallet/{name}"),
+        Auth::UserPass(RPC_USER.to_owned(), RPC_PASS.to_owned()),
+    )
+}
+
+/// Ensure a wallet with the given name exists and is loaded.
+///
+/// This is idempotent so the program can be re-run against a persistent node:
+/// we first try to create the wallet; if that fails (it already exists on
+/// disk) we fall back to loading it, and if it is already loaded we ignore the
+/// resulting error.
+fn ensure_wallet(rpc: &Client, name: &str) {
+    if rpc
+        .create_wallet(name, None, None, None, None)
+        .is_ok()
+    {
+        return;
+    }
+    // Already exists on disk (or already loaded) — try to load, ignore if loaded.
+    let _ = rpc.load_wallet(name);
+}
+
 fn main() -> bitcoincore_rpc::Result<()> {
-    // Connect to Bitcoin Core RPC
+    // Connect to Bitcoin Core RPC (node-level client, not tied to a wallet).
     let rpc = Client::new(
         RPC_URL,
         Auth::UserPass(RPC_USER.to_owned(), RPC_PASS.to_owned()),
@@ -45,7 +73,15 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let blockchain_info = rpc.get_blockchain_info()?;
     println!("Blockchain Info: {:?}", blockchain_info);
 
-    // Create/Load the wallets, named 'Miner' and 'Trader'. Have logic to optionally create/load them if they do not exist or not loaded already.
+    // ---- Phase 2: Create/Load the 'Miner' and 'Trader' wallets ----
+    // Names are case-sensitive and must match exactly.
+    ensure_wallet(&rpc, "Miner");
+    ensure_wallet(&rpc, "Trader");
+
+    // Per-wallet clients used for all wallet-scoped calls below.
+    let miner = wallet_client("Miner")?;
+    let trader = wallet_client("Trader")?;
+    println!("Wallets ready: Miner and Trader loaded.");
 
     // Generate spendable balances in the Miner wallet. How many blocks needs to be mined?
 
