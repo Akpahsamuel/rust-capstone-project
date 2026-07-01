@@ -104,9 +104,22 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let miner_balance = miner.get_balance(None, None)?;
     println!("Miner wallet balance: {} BTC", miner_balance.to_btc());
 
-    // Load Trader wallet and generate a new address
+    // ---- Phase 4: Trader receiving address + send 20 BTC ----
+    let trader_address = trader
+        .get_new_address(Some("Received"), None)?
+        .assume_checked();
 
-    // Send 20 BTC from Miner to Trader
+    let txid = miner.send_to_address(
+        &trader_address,
+        Amount::from_btc(20.0)?,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )?;
+    println!("Sent 20 BTC from Miner to Trader, txid: {txid}");
 
     // Check transaction in mempool
 
