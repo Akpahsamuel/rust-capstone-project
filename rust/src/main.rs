@@ -83,7 +83,26 @@ fn main() -> bitcoincore_rpc::Result<()> {
     let trader = wallet_client("Trader")?;
     println!("Wallets ready: Miner and Trader loaded.");
 
-    // Generate spendable balances in the Miner wallet. How many blocks needs to be mined?
+    // ---- Phase 3: Fund the Miner wallet by mining ----
+    let mining_address = miner
+        .get_new_address(Some("Mining Reward"), None)?
+        .assume_checked();
+
+    // Mine until the Miner has a positive spendable balance. A block reward is a
+    // coinbase output and must reach 100 confirmations (COINBASE_MATURITY) before
+    // it can be spent, so the first reward only matures after ~101 blocks.
+    let mut blocks_mined = 0u64;
+    loop {
+        rpc.generate_to_address(1, &mining_address)?;
+        blocks_mined += 1;
+        if miner.get_balance(None, None)? > Amount::ZERO {
+            break;
+        }
+    }
+    println!("Mined {blocks_mined} blocks before Miner had a positive balance.");
+
+    let miner_balance = miner.get_balance(None, None)?;
+    println!("Miner wallet balance: {} BTC", miner_balance.to_btc());
 
     // Load Trader wallet and generate a new address
 
